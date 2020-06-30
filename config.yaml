@@ -8,6 +8,8 @@ lr_steps:
   [50,80]
 epochs:
   100
+retrain_epochs:
+  20
 save_path:
   ./model_save/resnet20.pt
 device:

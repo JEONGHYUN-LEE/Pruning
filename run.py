@@ -6,6 +6,7 @@ from munch import munchify
 from tqdm import tqdm
 from utils import *
 from train import *
+from prun import *
 
 
 def run(config_path):
@@ -36,14 +37,40 @@ def run(config_path):
         if best_test_acc < test_acc:
             path, file = os.path.split(params.save_path)
             os.makedirs(path, exist_ok=True)
-            torch.save(model.to('cpu').state_dict(), params.save_path)
+            torch.save(model.to('cpu').state_dict(), params.save_path+'_'+str(epoch))
             model.to(device)
             best_test_acc = test_acc
         # Record Learning Curve
         train_accs.append(train_acc)
         test_accs.append(test_acc)
         scheduler.step()
+        conv_pruning(model, 0.9)
+
         # Print Result
-        print("epoch: ", epoch, "train_acc: ", round(train_acc, 4), "test_acc: ", round(test_acc, 4))
+        sparsity = get_sparsity(model)
+        print('epoch: ', epoch, "train_acc: ", round(train_acc, 4), "test_acc: ", round(test_acc, 4), "sparsity: ",
+              round(sparsity, 4))
+
+    for epoch in tqdm(range(params.retrain_epochs)):
+        # Train-Test
+        train_acc = retrain(train_loader, model, optimizer, criterion, device)
+        test_acc = test(test_loader, model, device)
+        # Save If Best
+        if best_test_acc < test_acc:
+            path, file = os.path.split(params.save_path)
+            os.makedirs(path, exist_ok=True)
+            torch.save(model.to('cpu').state_dict(), params.save_path+'_ret_'+str(epoch))
+            model.to(device)
+            best_test_acc = test_acc
+        # Record Learning Curve
+        train_accs.append(train_acc)
+        test_accs.append(test_acc)
+        scheduler.step()
+
+        # Print Result
+        sparsity = get_sparsity(model)
+        print('epoch: ', epoch, "train_acc: ", round(train_acc, 4), "test_acc: ", round(test_acc, 4), "sparsity: ",
+              round(sparsity, 4))
+
     # Return Learning Curve and Best Result
     return train_accs, test_accs, best_test_acc
