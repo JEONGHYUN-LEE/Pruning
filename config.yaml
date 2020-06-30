@@ -10,6 +10,8 @@ epochs:
   100
 retrain_epochs:
   20
+sparsity:
+  0.9
 save_path:
   ./model_save/resnet20.pt
 device:

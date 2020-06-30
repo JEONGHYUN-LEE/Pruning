@@ -44,7 +44,7 @@ def run(config_path):
         train_accs.append(train_acc)
         test_accs.append(test_acc)
         scheduler.step()
-        conv_pruning(model, 0.9)
+        conv_pruning(model, params.sparsity)
 
         # Print Result
         sparsity = get_sparsity(model)
